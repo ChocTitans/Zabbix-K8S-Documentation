@@ -1,0 +1,68 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: release-name-zabbix-postgresql
+  labels:
+    app: release-name-zabbix-postgresql
+    app.kubernetes.io/name: postgresql
+    app.kubernetes.io/instance: release-name-postgresql
+  annotations:
+spec:
+  replicas: 1
+  serviceName: release-name-zabbix
+  selector:
+    matchLabels:
+      app: release-name-zabbix-postgresql
+  template:
+    metadata:
+      annotations:
+      labels:
+        app: release-name-zabbix-postgresql
+        app.kubernetes.io/name: postgresql
+        app.kubernetes.io/instance: release-name-postgresql
+    spec:
+      serviceAccountName: release-name-zabbix
+      containers:
+        - name: postgresql
+          resources:
+            {}
+          securityContext:
+            {}
+          image: "postgres:15"
+          imagePullPolicy: IfNotPresent
+          args:
+            - "-c"
+            - "max_connections=50"
+          env:
+            
+            
+            - name: DB_SERVER_HOST
+              value: release-name-zabbix-postgresql
+            - name: DB_SERVER_PORT
+              value: "5432"
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: zabbixdb-pguser-zabbix
+                  key: user
+                  optional: true
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: zabbixdb-pguser-zabbix
+                  key: password
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: zabbixdb-pguser-zabbix
+                  key: dbname
+                  optional: true
+            - name: PGDATA
+              value: /var/lib/postgresql/data/pgdata
+          volumeMounts:
+          ports:
+            - name: db
+              containerPort: 5432
+              protocol: TCP
+      volumes:
+      imagePullSecrets:

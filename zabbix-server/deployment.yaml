@@ -1,0 +1,114 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: release-name-zabbix-zabbix-server
+  labels:
+    app: release-name-zabbix-zabbix-server
+    app.kubernetes.io/name: zabbix-server
+    app.kubernetes.io/instance: release-name-zabbix-server
+  annotations:
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: release-name-zabbix-zabbix-server
+  template:
+    metadata:
+      annotations:
+      labels:
+        app: release-name-zabbix-zabbix-server
+        app.kubernetes.io/name: zabbix-server
+        app.kubernetes.io/instance: release-name-zabbix-server
+    spec:
+      serviceAccountName: release-name-zabbix
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/instance: release-name-zabbix-server
+      initContainers:
+      containers:
+        - name: zabbix-server
+          resources:
+            {}
+          securityContext:
+            {}
+          image: "zabbix/zabbix-server-pgsql:ubuntu-6.0.20"
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 10051
+              name: zabbix-server
+            - containerPort: 10052
+              name: zabbix-jmx
+          env:
+            
+            
+            - name: DB_SERVER_HOST
+              value: release-name-zabbix-postgresql
+            - name: DB_SERVER_PORT
+              value: "5432"
+            - name: POSTGRES_USER
+              valueFrom:
+                secretKeyRef:
+                  name: zabbixdb-pguser-zabbix
+                  key: user
+                  optional: true
+            - name: POSTGRES_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: zabbixdb-pguser-zabbix
+                  key: password
+            - name: POSTGRES_DB
+              valueFrom:
+                secretKeyRef:
+                  name: zabbixdb-pguser-zabbix
+                  key: dbname
+                  optional: true
+            - name: ZBX_AUTOHANODENAME
+              value: "hostname"
+            - name: ZBX_NODEADDRESS
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.podIP
+            - name: ZBX_WEBSERVICEURL
+              value: "http://release-name-zabbix-zabbix-webservice:10053/report"
+            - name: ZBX_STARTREPORTWRITERS
+              value: "1"
+        - name: zabbix-agent
+          resources:
+            {}
+          securityContext:
+            {}
+          image: "zabbix/zabbix-agent2:ubuntu-6.0.20"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: ZBX_HOSTNAME
+              value: "Zabbix server"
+            - name: ZBX_SERVER_HOST
+              value: "0.0.0.0/0"
+            - name: ZBX_SERVER_PORT
+              value: "10051"
+            - name: ZBX_PASSIVE_ALLOW
+              value: "true"
+            - name: ZBX_PASSIVESERVERS
+              value: 
+            - name: ZBX_ACTIVE_ALLOW
+              value: "false"
+            - name: ZBX_ACTIVESERVERS
+              value: 
+            - name: ZBX_DEBUGLEVEL
+              value: "3"
+            - name: ZBX_TIMEOUT
+              value: "4"
+            - name: ZBX_LOADMODULE
+              value: 
+          ports:
+            - name: zabbix-agent
+              containerPort: 10050
+              protocol: TCP
+      imagePullSecrets:
+      volumes:

@@ -1,0 +1,89 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: release-name-zabbix-zabbix-web
+  labels:
+    app: release-name-zabbix-zabbix-web
+    app.kubernetes.io/name: zabbix-web
+    app.kubernetes.io/instance: release-name-zabbix-web
+  annotations:
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app:  release-name-zabbix-zabbix-web
+  template:
+    metadata:
+      annotations:
+      labels:
+        app: release-name-zabbix-zabbix-web
+        app.kubernetes.io/name: zabbix-web
+        app.kubernetes.io/instance: release-name-zabbix-web
+    spec:
+      serviceAccountName: release-name-zabbix
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/instance: release-name-zabbix-web
+      containers:
+      - name: zabbix-web
+        resources:
+          {}
+        securityContext:
+          {}
+        image: "zabbix/zabbix-web-nginx-pgsql:ubuntu-6.0.20"
+        imagePullPolicy: IfNotPresent
+        env:
+          
+          
+          - name: DB_SERVER_HOST
+            value: release-name-zabbix-postgresql
+          - name: DB_SERVER_PORT
+            value: "5432"
+          - name: POSTGRES_USER
+            valueFrom:
+              secretKeyRef:
+                name: zabbixdb-pguser-zabbix
+                key: user
+                optional: true
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: zabbixdb-pguser-zabbix
+                key: password
+          - name: POSTGRES_DB
+            valueFrom:
+              secretKeyRef:
+                name: zabbixdb-pguser-zabbix
+                key: dbname
+                optional: true
+        ports:
+          - name: zabbix-web
+            containerPort: 8080
+            protocol: TCP
+        volumeMounts:
+        livenessProbe:
+          httpGet:
+            path: /
+            port: zabbix-web
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 6
+        readinessProbe:
+          httpGet:
+            path: /
+            port: zabbix-web
+          initialDelaySeconds: 5
+          periodSeconds: 10
+          timeoutSeconds: 5
+          successThreshold: 1
+          failureThreshold: 6
+      imagePullSecrets:
+      volumes:

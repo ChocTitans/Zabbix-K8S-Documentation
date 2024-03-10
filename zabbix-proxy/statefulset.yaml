@@ -1,0 +1,91 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: my-release-zabbix-zabbix-proxy
+  labels:
+    app: my-release-zabbix-zabbix-proxy
+    app.kubernetes.io/name: zabbix-proxy
+    app.kubernetes.io/instance: my-release-zabbix-proxy
+    app.kubernetes.io/managed-by: Helm-zabbix-proxy
+  annotations:
+spec:
+  replicas: 2
+  serviceName: release-name-zabbix
+  selector:
+    matchLabels:
+      app: my-release-zabbix-zabbix-proxy
+  template:
+    metadata:
+      annotations:
+      labels:
+        app: my-release-zabbix-zabbix-proxy
+        app.kubernetes.io/name: zabbix-proxy
+        app.kubernetes.io/instance: my-release-zabbix-proxy
+    spec:
+      serviceAccountName: release-name-zabbix
+      containers:
+        - name: zabbix-agent
+          resources:
+            {}
+          securityContext:
+            {}
+          image: "zabbix/zabbix-agent2:ubuntu-6.0.20"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: ZBX_HOSTNAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: metadata.name
+            - name: ZBX_SERVER_HOST
+              value: "0.0.0.0/0"
+            - name: ZBX_SERVER_PORT
+              value: "10051"
+            - name: ZBX_PASSIVE_ALLOW
+              value: "true"
+            - name: ZBX_PASSIVESERVERS
+              value: 
+            - name: ZBX_ACTIVE_ALLOW
+              value: "false"
+            - name: ZBX_ACTIVESERVERS
+              value: 
+            - name: ZBX_DEBUGLEVEL
+              value: "3"
+            - name: ZBX_TIMEOUT
+              value: "4"
+            - name: ZBX_LOADMODULE
+              value: 
+          ports:
+            - name: zabbix-agent
+              containerPort: 10050
+              protocol: TCP
+        - name: zabbix-proxy
+          resources:
+            {}
+          securityContext:
+            {}
+          image: "zabbix/zabbix-proxy-sqlite3:ubuntu-6.0.20"
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: ZBX_PROXYMODE
+              value: "0"
+            - name: ZBX_HOSTNAME
+              value: "zabbix-proxy"
+            - name: ZBX_SERVER_HOST
+              value: "release-name-zabbix-zabbix-server"
+            - name: ZBX_SERVER_PORT
+              value: "10051"
+            - name: ZBX_LOADMODULE
+              value: 
+            - name: ZBX_DEBUGLEVEL
+              value: "4"
+            - name: ZBX_TIMEOUT
+              value: "4"
+            - name: ZBX_JAVAGATEWAY_ENABLE
+              value: "true"
+            - name: ZBX_VMWARECACHESIZE
+              value: "128M"
+          ports:
+            - name: zabbix-proxy
+              containerPort: 10051
+              protocol: TCP
+      imagePullSecrets:

@@ -1,0 +1,48 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: release-name-zabbix-zabbix-webservice
+  labels:
+    app: release-name-zabbix-zabbix-webservice
+    app.kubernetes.io/name: zabbix-webservice
+    app.kubernetes.io/instance: release-name-zabbix-webservice
+  annotations:
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app:  release-name-zabbix-zabbix-webservice
+  template:
+    metadata:
+      annotations:
+      labels:
+        app: release-name-zabbix-zabbix-webservice
+        app.kubernetes.io/name: zabbix-webservice
+        app.kubernetes.io/instance: release-name-zabbix-webservice
+    spec:
+      serviceAccountName: release-name-zabbix
+      affinity:
+        podAntiAffinity:
+          preferredDuringSchedulingIgnoredDuringExecution:
+          - weight: 1
+            podAffinityTerm:
+              topologyKey: kubernetes.io/hostname
+              labelSelector:
+                matchLabels:
+                  app.kubernetes.io/instance: release-name-zabbix-webservice
+      containers:
+      - name: zabbix-webservice
+        resources:
+          {}
+        securityContext:
+          {}
+        image: "zabbix/zabbix-web-service:ubuntu-6.0.20"
+        imagePullPolicy: IfNotPresent
+        env:
+          - name: ZBX_ALLOWEDIP
+            value: "::/0"
+        ports:
+          - name: webservice
+            containerPort: 10053
+            protocol: TCP
+      imagePullSecrets:

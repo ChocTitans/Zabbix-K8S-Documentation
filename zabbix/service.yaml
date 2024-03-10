@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: release-name-zabbix-zabbix-agent
+  labels:
+    app: release-name-zabbix-zabbix-agent
+    app.kubernetes.io/name: zabbix-agent
+    app.kubernetes.io/instance: release-name-zabbix-agent
+spec:
+  type: ClusterIP
+  ports:
+    - port: 10050
+      targetPort: 10050
+      protocol: TCP
+      name: zabbix-agent
+  selector:
+    app: release-name-zabbix-zabbix-server
